@@ -1,0 +1,149 @@
+﻿@page "/"
+@using GHSFL.Points.Models
+
+@inject HttpClient Http
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <div class="d-flex">
+        <MudCheckBox T="bool" ValueChanged="FilterPoints" Label="Exclude fencers with 0 points"/>
+        <MudSpacer/>
+        <MudSelect T="string" ValueChanged="FilterGender" Label="Show gender">
+            <MudSelectItem Value="@("Combined")">Combined</MudSelectItem>
+            <MudSelectItem Value="@("Men")">Men</MudSelectItem>
+            <MudSelectItem Value="@("Women")">Women</MudSelectItem>
+        </MudSelect>
+        <MudSpacer/>
+        <MudSelect T="string" ValueChanged="FilterSchool" Label="Show school">
+            <MudSelectItem Value="@("All")">All</MudSelectItem>
+            @foreach (var school in _schools)
+            {
+                <MudSelectItem Value="@school">@school</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+    <br/>
+
+    @if (_seasonInfo is not null)
+    {
+        <MudTable T="FencerInfo" Items="_tableData">
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Firstname)">
+                        First
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Lastname)">
+                        Last
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Club)">
+                        Club
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.TotalPoints)">
+                        Total Points
+                    </MudTableSortLabel>
+                </MudTh>
+                @for (var round = 0; round < _seasonInfo.NumRounds; round++)
+                {
+                    var theRound = round + 1;
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => PointForRound(x, theRound))">
+                            @($"Round {theRound}")
+                        </MudTableSortLabel>
+                    </MudTh>
+                }
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Firstname</MudTd>
+                <MudTd>@context.Lastname</MudTd>
+                <MudTd>@context.Club</MudTd>
+                <MudTd>@context.TotalPoints</MudTd>
+                @for (var i = 1; i <= _seasonInfo.NumRounds; i++)
+                {
+                    var displayValue = context.PointsPerRound.TryGetValue(i, out var value)
+                        ? value.ToString()
+                        : "-";
+                    <MudTd>@displayValue</MudTd>
+                }
+            </RowTemplate>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+
+    private SeasonInfo? _seasonInfo;
+    private List<string> _schools = new();
+    private List<FencerInfo> _tableData = new();
+
+    private string _schoolFilter = "All";
+    private string _genderFilter = "Combined";
+    private bool _showFencersWithoutPoints = true;
+
+    private void FilterPoints()
+    {
+        _showFencersWithoutPoints = !_showFencersWithoutPoints;
+        Filter();
+    }
+    
+    private void FilterGender(string value)
+    {
+        _genderFilter = value;
+        Filter();
+    }
+
+    private void FilterSchool(string value)
+    {
+        _schoolFilter = value;
+        Filter();
+    }
+
+    private void Filter()
+    {
+        var filtered = _seasonInfo!.FencerPoints;
+        
+        filtered = _genderFilter switch
+        {
+            "Combined" => _seasonInfo!.FencerPoints.OrderByDescending(x => x.TotalPoints).ToList(),
+            "Men" => _seasonInfo!.FencerPoints.Where(x => x.Gender == "M").OrderByDescending(x => x.TotalPoints).ToList(),
+            "Women" => _seasonInfo!.FencerPoints.Where(x => x.Gender == "F").OrderByDescending(x => x.TotalPoints).ToList(),
+            _ => throw new ArgumentException("Unknown gender {value}")
+        };
+        
+        filtered = _schoolFilter == "All" 
+            ? filtered.OrderByDescending(x => x.TotalPoints).ToList() 
+            : filtered.Where(x => x.Club == _schoolFilter).OrderByDescending(x => x.TotalPoints).ToList();
+
+        if (!_showFencersWithoutPoints)
+        {
+            filtered = filtered.Where(x => x.TotalPoints > 0).ToList();
+        }
+
+        _tableData = filtered;
+        StateHasChanged();
+    }
+
+    private static int PointForRound(FencerInfo fencer, int round)
+    {
+        return fencer.PointsPerRound.TryGetValue(round, out var value) 
+            ? value 
+            : 0;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Get the fencers from the fencer file.
+            _seasonInfo = await Utils.GetPointsFromFile(Http);
+            _tableData = _seasonInfo.FencerPoints.OrderByDescending(x => x.TotalPoints).ToList();
+            _schools = _seasonInfo.FencerPoints.DistinctBy(x => x.Club).Select(x => x.Club).ToList();
+            StateHasChanged();
+        }
+    }
+
+}
