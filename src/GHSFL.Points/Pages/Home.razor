@@ -1,12 +1,12 @@
 ﻿@page "/"
 @using GHSFL.Points.Models
+@using System.Data
 
+@inject ISnackbar Snackbar
 @inject HttpClient Http
 
 <MudContainer MaxWidth="MaxWidth.Large">
     <div class="d-flex">
-        <MudCheckBox T="bool" ValueChanged="FilterPoints" Label="Exclude fencers with 0 points"/>
-        <MudSpacer/>
         <MudSelect T="string" ValueChanged="FilterGender" Label="Show gender">
             <MudSelectItem Value="@("Combined")">Combined</MudSelectItem>
             <MudSelectItem Value="@("Men")">Men</MudSelectItem>
@@ -25,7 +25,7 @@
 
     @if (_seasonInfo is not null)
     {
-        <MudTable T="FencerInfo" Items="_tableData">
+        <MudTable T="FencerInfo" Items="_tableData" Breakpoint="Breakpoint.LgAndDown">
             <HeaderContent>
                 <MudTh>
                     <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Firstname)">
@@ -47,12 +47,12 @@
                         Total Points
                     </MudTableSortLabel>
                 </MudTh>
-                @for (var round = 0; round < _seasonInfo.NumRounds; round++)
+                @for (var i = 0; i < _seasonInfo.NumRounds; i++)
                 {
-                    var theRound = round + 1;
+                    var roundNum = i + 1;
                     <MudTh>
-                        <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => PointForRound(x, theRound))">
-                            @($"Round {theRound}")
+                        <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => PointForRound(x, roundNum))">
+                            @($"Round {roundNum}")
                         </MudTableSortLabel>
                     </MudTh>
                 }
@@ -76,37 +76,49 @@
 
 @code {
 
+    /// <summary>
+    /// The base season data that is used to populate the table.
+    /// </summary>
     private SeasonInfo? _seasonInfo;
+    
+    /// <summary>
+    /// The schools currently in the league.
+    /// </summary>
     private List<string> _schools = new();
+    
+    /// <summary>
+    /// The data currently being displayed in the table. 
+    /// </summary>
     private List<FencerInfo> _tableData = new();
 
     private string _schoolFilter = "All";
     private string _genderFilter = "Combined";
-    private bool _showFencersWithoutPoints = true;
 
-    private void FilterPoints()
-    {
-        _showFencersWithoutPoints = !_showFencersWithoutPoints;
-        Filter();
-    }
-    
+    /// <summary>
+    /// Filter based on selected gender.
+    /// </summary>
     private void FilterGender(string value)
     {
         _genderFilter = value;
         Filter();
     }
 
+    /// <summary>
+    /// Filter based on selected school.
+    /// </summary>
     private void FilterSchool(string value)
     {
         _schoolFilter = value;
         Filter();
     }
 
+    /// <summary>
+    /// Filter the table.
+    /// </summary>
     private void Filter()
     {
-        var filtered = _seasonInfo!.FencerPoints;
-        
-        filtered = _genderFilter switch
+        // First, filter based on the selected gender.
+        var filtered = _genderFilter switch
         {
             "Combined" => _seasonInfo!.FencerPoints.OrderByDescending(x => x.TotalPoints).ToList(),
             "Men" => _seasonInfo!.FencerPoints.Where(x => x.Gender == "M").OrderByDescending(x => x.TotalPoints).ToList(),
@@ -114,34 +126,60 @@
             _ => throw new ArgumentException("Unknown gender {value}")
         };
         
+        // Then filter by school.
         filtered = _schoolFilter == "All" 
             ? filtered.OrderByDescending(x => x.TotalPoints).ToList() 
             : filtered.Where(x => x.Club == _schoolFilter).OrderByDescending(x => x.TotalPoints).ToList();
 
-        if (!_showFencersWithoutPoints)
-        {
-            filtered = filtered.Where(x => x.TotalPoints > 0).ToList();
-        }
-
+        // Update the data in the table.
         _tableData = filtered;
         StateHasChanged();
     }
 
-    private static int PointForRound(FencerInfo fencer, int round)
+    /// <summary>
+    /// Gets points for a round for a fencer.
+    /// </summary>
+    private static string PointForRound(FencerInfo fencer, int round)
     {
         return fencer.PointsPerRound.TryGetValue(round, out var value) 
-            ? value 
-            : 0;
+            ? value.ToString() 
+            : "-";
     }
 
+    /// <summary>
+    /// First code to run on page load. This populates the table with data.
+    /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // Get the fencers from the fencer file.
-            _seasonInfo = await Utils.GetPointsFromFile(Http);
-            _tableData = _seasonInfo.FencerPoints.OrderByDescending(x => x.TotalPoints).ToList();
-            _schools = _seasonInfo.FencerPoints.DistinctBy(x => x.Club).Select(x => x.Club).ToList();
+            try
+            {
+                // Get the fencers from the fencer file.
+                _seasonInfo = await Utils.GetDataFromFile(Http);
+
+                // Do some other setup. 
+                _tableData = _seasonInfo.FencerPoints
+                    .OrderByDescending(x => x.TotalPoints)
+                    .ToList();
+
+                _schools = _seasonInfo.FencerPoints
+                    .DistinctBy(x => x.Club)
+                    .Select(x => x.Club)
+                    .OrderBy(x => x)
+                    .ToList();
+            }
+            catch (DataException)
+            {
+                Snackbar.Add("An error occured while fetching data. Please refresh the page. If the error " +
+                             "persists, contact the GHSFL Tournament Coordinator.", Severity.Error);
+            }
+            catch (Exception e)
+            {
+                Snackbar.Add($"An unexpected error occured. Please send the below message to the GHSFL " +
+                             $"Tournament Coordinator:\n{e.Message}", Severity.Error);
+            }
+            
             StateHasChanged();
         }
     }
