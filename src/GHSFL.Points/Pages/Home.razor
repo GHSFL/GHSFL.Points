@@ -52,10 +52,11 @@
                     var roundNum = i + 1;
                     <MudTh>
                         <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => PointForRound(x, roundNum))">
-                            @($"Round {roundNum}")
+                            @($"R{roundNum}")
                         </MudTableSortLabel>
                     </MudTh>
                 }
+                <MudTh>Qualified for IC</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.Firstname</MudTd>
@@ -69,6 +70,12 @@
                         : "-";
                     <MudTd>@displayValue</MudTd>
                 }
+                <MudTh>
+                    @if (context.QualifiedForIndividualChamps == true)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success"/>
+                    }
+                </MudTh>
             </RowTemplate>
         </MudTable>
     }

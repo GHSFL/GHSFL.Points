@@ -16,19 +16,19 @@ public static class Utils
     {
         try
         {
-            var rawJson = await http.GetStringAsync("sample-data/info.json");
+            var rawJson = await http.GetStringAsync("sample-data/fencer-info.json");
             var info = JsonSerializer.Deserialize<SeasonInfo>(rawJson);
 
             if (info is null)
             {
-                throw new DataException("Could not parse info.json");
+                throw new DataException("Could not parse fencer-info.json");
             }
 
             return info;
         }
         catch (HttpRequestException)
         {
-            throw new DataException("Could not find info.json");
+            throw new DataException("Could not find fencer-info.json");
         }    
     }
 }

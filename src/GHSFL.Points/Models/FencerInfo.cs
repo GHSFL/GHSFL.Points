@@ -21,16 +21,16 @@ public class FencerInfo
     /// The club the fencer belongs to.
     /// </summary>
     public required string Club { get; set; }
-    
+
     /// <summary>
     /// The number of tournaments this fencer has attended.
     /// </summary>
-    public required int TournamentsAttended { get; set; }
+    public int TournamentsAttended => PointsPerRound.Count;
 
     /// <summary>
     /// Whether this fencer is qualified for the individual championships.
     /// </summary>
-    public bool QualifiedForIndividualChamps => TotalPoints > 0 && PointsPerRound.Count != 0; 
+    public bool QualifiedForIndividualChamps => TotalPoints > 0 && PointsPerRound.Count > 2; 
 
     /// <summary>
     /// The total points the fencer has.
