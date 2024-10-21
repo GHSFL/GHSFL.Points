@@ -6,80 +6,136 @@
 @inject HttpClient Http
 
 <MudContainer MaxWidth="MaxWidth.Large">
-    <div class="d-flex">
-        <MudSelect T="string" ValueChanged="FilterGender" Label="Show gender">
-            <MudSelectItem Value="@("Combined")">Combined</MudSelectItem>
-            <MudSelectItem Value="@("Men")">Men</MudSelectItem>
-            <MudSelectItem Value="@("Women")">Women</MudSelectItem>
-        </MudSelect>
-        <MudSpacer/>
-        <MudSelect T="string" ValueChanged="FilterSchool" Label="Show school">
-            <MudSelectItem Value="@("All")">All</MudSelectItem>
-            @foreach (var school in _schools)
-            {
-                <MudSelectItem Value="@school">@school</MudSelectItem>
-            }
-        </MudSelect>
-    </div>
-    <br/>
+    <MudText Typo="Typo.body1">View:</MudText>
+    <MudSwitch @bind-Value="_fencerView" Label=@(_fencerView ? "Fencers" : "Schools") Color="Color.Primary"/>
+</MudContainer>
 
-    @if (_seasonInfo is not null)
-    {
-        <MudTable T="FencerInfo" Items="_tableData" Breakpoint="Breakpoint.LgAndDown">
-            <HeaderContent>
-                <MudTh>
-                    <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Firstname)">
-                        First
-                    </MudTableSortLabel>
-                </MudTh>
-                <MudTh>
-                    <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Lastname)">
-                        Last
-                    </MudTableSortLabel>
-                </MudTh>
-                <MudTh>
-                    <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Club)">
-                        Club
-                    </MudTableSortLabel>
-                </MudTh>
-                <MudTh>
-                    <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.TotalPoints)">
-                        Total Points
-                    </MudTableSortLabel>
-                </MudTh>
-                @for (var i = 0; i < _seasonInfo.NumRounds; i++)
+@if (_fencerView)
+{
+    <MudContainer MaxWidth="MaxWidth.Large">
+        <MudText Typo="Typo.body1">In order to be qualified for the individual championships, a fencer must have fenced in 3 tournaments and have earned points at least once (placed in the top 16).</MudText>
+        <br/>
+        <div class="d-flex">
+            <MudSelect T="string" ValueChanged="FilterGender" Label="Show gender">
+                <MudSelectItem Value="@("Combined")">Combined</MudSelectItem>
+                <MudSelectItem Value="@("Men")">Men</MudSelectItem>
+                <MudSelectItem Value="@("Women")">Women</MudSelectItem>
+            </MudSelect>
+            <MudSpacer/>
+            <MudSelect T="string" ValueChanged="FilterSchool" Label="Show school">
+                <MudSelectItem Value="@("All")">All</MudSelectItem>
+                @foreach (var school in _schools)
                 {
-                    var roundNum = i + 1;
+                    <MudSelectItem Value="@school">@school</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+        <br/>
+
+        @if (_seasonInfo is not null)
+        {
+            <MudTable T="FencerInfo" Items="_tableData" Breakpoint="Breakpoint.LgAndDown">
+                <HeaderContent>
                     <MudTh>
-                        <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => PointForRound(x, roundNum))">
-                            @($"R{roundNum}")
+                        <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Firstname)">
+                            First
                         </MudTableSortLabel>
                     </MudTh>
-                }
-                <MudTh>Qualified for IC</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd>@context.Firstname</MudTd>
-                <MudTd>@context.Lastname</MudTd>
-                <MudTd>@context.Club</MudTd>
-                <MudTd>@context.TotalPoints</MudTd>
-                @for (var i = 1; i <= _seasonInfo.NumRounds; i++)
-                {
-                    var displayValue = context.PointsPerRound.TryGetValue(i, out var value)
-                        ? value.ToString()
-                        : "-";
-                    <MudTd>@displayValue</MudTd>
-                }
-                <MudTh>
-                    @if (context.QualifiedForIndividualChamps == true)
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Lastname)">
+                            Last
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Club)">
+                            Club
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.TotalPoints)">
+                            Total Points
+                        </MudTableSortLabel>
+                    </MudTh>
+                    @for (var i = 0; i < _seasonInfo.NumRounds; i++)
                     {
-                        <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success"/>
+                        var roundNum = i + 1;
+                        <MudTh>
+                            <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => PointForRound(x, roundNum))">
+                                @($"R{roundNum}")
+                            </MudTableSortLabel>
+                        </MudTh>
                     }
-                </MudTh>
-            </RowTemplate>
-        </MudTable>
-    }
-</MudContainer>
+                    <MudTh>Qualified for IC</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Firstname</MudTd>
+                    <MudTd>@context.Lastname</MudTd>
+                    <MudTd>@context.Club</MudTd>
+                    <MudTd>@context.TotalPoints</MudTd>
+                    @for (var i = 1; i <= _seasonInfo.NumRounds; i++)
+                    {
+                        var displayValue = context.PointsPerRound.TryGetValue(i, out var value)
+                            ? value.ToString()
+                            : "-";
+                        <MudTd>@displayValue</MudTd>
+                    }
+                    <MudTh>
+                        @if (context.QualifiedForIndividualChamps == true)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success"/>
+                        }
+                    </MudTh>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudContainer>
+}
+else {
+    <MudContainer MaxWidth="MaxWidth.Large">
+        <MudGrid Spacing="1">
+            <MudItem xs="12" sm="4">
+                <MudText Typo="Typo.h4">Combined</MudText>
+                <MudTable T="SchoolInfo" Items="_combinedPointsPerSchool">
+                    <HeaderContent>
+                        <MudTh>School</MudTh>
+                        <MudTh>Points</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Club</MudTd>
+                        <MudTd>@context.Points</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudText Typo="Typo.h4">Men's</MudText>
+                <MudTable T="SchoolInfo" Items="_mensPointsPerSchool">
+                    <HeaderContent>
+                        <MudTh>School</MudTh>
+                        <MudTh>Points</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Club</MudTd>
+                        <MudTd>@context.Points</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudText Typo="Typo.h4">Women's</MudText>
+                <MudTable T="SchoolInfo" Items="_mensPointsPerSchool">
+                    <HeaderContent>
+                        <MudTh>School</MudTh>
+                        <MudTh>Points</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Club</MudTd>
+                        <MudTd>@context.Points</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+}
+
 
 @code {
 
@@ -87,19 +143,25 @@
     /// The base season data that is used to populate the table.
     /// </summary>
     private SeasonInfo? _seasonInfo;
-    
+
     /// <summary>
     /// The schools currently in the league.
     /// </summary>
     private List<string> _schools = new();
-    
+
     /// <summary>
     /// The data currently being displayed in the table. 
     /// </summary>
     private List<FencerInfo> _tableData = new();
 
+    private List<SchoolInfo> _mensPointsPerSchool = new();
+    private List<SchoolInfo> _womensPointsPerSchool = new();
+    private List<SchoolInfo> _combinedPointsPerSchool = new();
+
     private string _schoolFilter = "All";
     private string _genderFilter = "Combined";
+
+    private bool _fencerView = true;
 
     /// <summary>
     /// Filter based on selected gender.
@@ -132,10 +194,10 @@
             "Women" => _seasonInfo!.FencerPoints.Where(x => x.Gender == "F").OrderByDescending(x => x.TotalPoints).ToList(),
             _ => throw new ArgumentException("Unknown gender {value}")
         };
-        
+
         // Then filter by school.
-        filtered = _schoolFilter == "All" 
-            ? filtered.OrderByDescending(x => x.TotalPoints).ToList() 
+        filtered = _schoolFilter == "All"
+            ? filtered.OrderByDescending(x => x.TotalPoints).ToList()
             : filtered.Where(x => x.Club == _schoolFilter).OrderByDescending(x => x.TotalPoints).ToList();
 
         // Update the data in the table.
@@ -148,9 +210,30 @@
     /// </summary>
     private static string PointForRound(FencerInfo fencer, int round)
     {
-        return fencer.PointsPerRound.TryGetValue(round, out var value) 
-            ? value.ToString() 
+        return fencer.PointsPerRound.TryGetValue(round, out var value)
+            ? value.ToString()
             : "-";
+    }
+
+    private void PopulateDictionaries()
+    {
+        foreach (var fencer in _seasonInfo!.FencerPoints)
+        {
+            if (fencer.Gender == "M")
+            {
+                _mensPointsPerSchool.AddOrUpdate(fencer.Club, fencer.TotalPoints);
+            }
+            else
+            {
+                _womensPointsPerSchool.AddOrUpdate(fencer.Club, fencer.TotalPoints);
+            }
+
+            _combinedPointsPerSchool.AddOrUpdate(fencer.Club, fencer.TotalPoints);
+
+            _mensPointsPerSchool = _mensPointsPerSchool.OrderByDescending(x => x.Points).ToList();
+            _womensPointsPerSchool = _womensPointsPerSchool.OrderByDescending(x => x.Points).ToList();
+            _combinedPointsPerSchool = _combinedPointsPerSchool.OrderByDescending(x => x.Points).ToList();
+        }
     }
 
     /// <summary>
@@ -175,6 +258,8 @@
                     .Select(x => x.Club)
                     .OrderBy(x => x)
                     .ToList();
+                
+                PopulateDictionaries();
             }
             catch (DataException)
             {
@@ -186,7 +271,7 @@
                 Snackbar.Add($"An unexpected error occured. Please send the below message to the GHSFL " +
                              $"Tournament Coordinator:\n{e.Message}", Severity.Error);
             }
-            
+
             StateHasChanged();
         }
     }
