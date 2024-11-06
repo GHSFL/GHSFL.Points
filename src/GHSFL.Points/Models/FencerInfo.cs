@@ -3,6 +3,11 @@
 public class FencerInfo
 {
     /// <summary>
+    /// The DB ID of the fencer.
+    /// </summary>
+    public required long FencerId { get; set; }
+    
+    /// <summary>
     /// The firstname of the fencer.
     /// </summary>
     public required string Firstname { get; set; }
