@@ -245,19 +245,23 @@ else {
         }
     }
 
+    /// <summary>
+    /// Open fencer stat dialog. Currently only has pool info.
+    /// </summary>
+    /// <param name="fencerInfo">The fencer info object.</param>
     private async Task OpenFencerDialog(FencerInfo fencerInfo)
     {
-        var found = _poolInfo.TryGetValue(fencerInfo.FencerId, out var pools);
-
-        if (!found)
+        // This, in theory, should never happen, but I'd rather cma than be sorry.
+        if (!_poolInfo.TryGetValue(fencerInfo.FencerId, out var pools))
         {
             Snackbar.Add("Could not find pool data for fencer.", Severity.Error);
             return;
         }
         
         var parameters = new DialogParameters { { "PoolInfoForFencer", pools } };
-        // var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
-        await DialogService.ShowAsync<FencerStats>("This is a test", parameters);
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
+        await DialogService.ShowAsync<FencerStats>($"Pools for {fencerInfo.Firstname} {fencerInfo.Lastname}",
+            parameters, options);
     }
 
     /// <summary>

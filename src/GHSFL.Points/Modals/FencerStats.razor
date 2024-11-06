@@ -13,7 +13,7 @@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd>@context.Victories</MudTd>
-                    <MudTd>@context.Vm</MudTd>
+                    <MudTd>@($"{context.Vm:N02}")</MudTd>
                     <MudTd>@context.Scored</MudTd>
                     <MudTd>@context.Received</MudTd>
                     <MudTd>@context.Indicator</MudTd>
