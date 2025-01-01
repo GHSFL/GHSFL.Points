@@ -20,4 +20,11 @@ public static class Extensions
             entry.Points += points;
         }
     }
+
+    public static int GetQualified(this List<FencerInfo> fencerInfo, string gender)
+    {
+        return fencerInfo
+            .Where(x => x.Gender == gender)
+            .Count(x => x.QualifiedForIndividualChamps);
+    }
 }

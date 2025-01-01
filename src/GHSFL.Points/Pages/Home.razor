@@ -8,15 +8,21 @@
 @inject IDialogService DialogService
 
 <MudContainer MaxWidth="MaxWidth.Large">
-    <MudText Typo="Typo.body1">View:</MudText>
     <MudSwitch @bind-Value="_fencerView" Label=@(_fencerView ? "Fencers" : "Schools") Color="Color.Primary"/>
 </MudContainer>
 
 @if (_fencerView)
 {
     <MudContainer MaxWidth="MaxWidth.Large">
-        <MudText Typo="Typo.body1">In order to be qualified for the individual championships, a fencer must have fenced in 3 tournaments and have earned points at least once (placed in the top 16).</MudText>
-        <MudText Typo="Typo.body1">A dash (-) indicates that a fencer did not fence in the specified event.</MudText>
+        @if (_genderFilter is "Men" or "Combined")
+        {
+            <MudText Typo="Typo.body1">There are @(_menQualified) men qualified for the individual championships@(_schoolFilter != "All" ? $" for {_schoolFilter}" : string.Empty).</MudText>
+        }
+        
+        @if (_genderFilter is "Women" or "Combined")
+        {
+            <MudText Typo="Typo.body1">There are @(_womenQualified) women qualified for the individual championships@(_schoolFilter != "All" ? $" for {_schoolFilter}" : string.Empty).</MudText>
+        }
         <br/>
         <div class="d-flex">
             <MudSelect T="string" ValueChanged="FilterGender" Label="Show gender">
@@ -32,12 +38,22 @@
                     <MudSelectItem Value="@school">@school</MudSelectItem>
                 }
             </MudSelect>
+            <MudSpacer/>
+            <MudTooltip ShowOnClick="true" ShowOnHover="false" ShowOnFocus="false" Placement="Placement.Left">
+                <ChildContent>
+                    <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"/>
+                </ChildContent>
+                <TooltipContent>
+                    <MudText Typo="Typo.body1">In order to be qualified for the individual championships, a fencer must have fenced in 3 tournaments and have earned points at least once (placed in the top 16).</MudText>
+                    <MudText Typo="Typo.body1">A dash (-) indicates that a fencer did not fence in the specified event.</MudText>
+                </TooltipContent>
+            </MudTooltip>
         </div>
         <br/>
 
         @if (_seasonInfo is not null)
         {
-            <MudTable T="FencerInfo" Items="_tableData" Breakpoint="Breakpoint.LgAndDown" 
+            <MudTable T="FencerInfo" Items="_tableData" Breakpoint="Breakpoint.LgAndDown"
                       OnRowClick="async row => { await OpenFencerDialog(row.Item); }">
                 <HeaderContent>
                     <MudTh>
@@ -158,16 +174,51 @@ else {
     /// </summary>
     private List<FencerInfo> _tableData = new();
 
+    /// <summary>
+    /// The list of men's points by school.
+    /// </summary>
     private List<SchoolInfo> _mensPointsPerSchool = new();
+    
+    /// <summary>
+    /// The list of women's points by school.
+    /// </summary>
     private List<SchoolInfo> _womensPointsPerSchool = new();
+    
+    /// <summary>
+    /// The list of combined points by school.
+    /// </summary>
     private List<SchoolInfo> _combinedPointsPerSchool = new();
 
+    /// <summary>
+    /// Dictionary of pool information where the key is a fencer ID and the value is information about the pools they
+    /// fenced in.
+    /// </summary>
     private Dictionary<long, PoolsForFencer> _poolInfo = new();
 
+    /// <summary>
+    /// How to filter the data by school.
+    /// </summary>
     private string _schoolFilter = "All";
+    
+    /// <summary>
+    /// How to filter the data by gender.
+    /// </summary>
     private string _genderFilter = "Combined";
 
+    /// <summary>
+    /// If we're in the fencer data view. If this is false, we're looking at the school data view. 
+    /// </summary>
     private bool _fencerView = true;
+
+    /// <summary>
+    /// The number of men qualified for the individual champs.
+    /// </summary>
+    private int _menQualified = 0;
+    
+    /// <summary>
+    /// The number of women qualified for the individual champs.
+    /// </summary>
+    private int _womenQualified = 0;
 
     /// <summary>
     /// Filter based on selected gender.
@@ -208,6 +259,8 @@ else {
 
         // Update the data in the table.
         _tableData = filtered;
+        _menQualified = _tableData.GetQualified("M");
+        _womenQualified = _tableData.GetQualified("F");
         StateHasChanged();
     }
 
@@ -281,12 +334,19 @@ else {
                     .OrderByDescending(x => x.TotalPoints)
                     .ToList();
 
+                // Get info by school.
                 _schools = _seasonInfo.FencerPoints
                     .DistinctBy(x => x.Club)
                     .Select(x => x.Club)
                     .OrderBy(x => x)
                     .ToList();
 
+                // Get the # of men that are qualified for the IC.
+                _menQualified = _tableData.GetQualified("M");
+                
+                // Get the # of women that are qualified for the IC.
+                _womenQualified = _tableData.GetQualified("F");
+                
                 _poolInfo = await Utils.GetPoolDataFromFile(Http);
                 PopulateDictionaries();
             }
