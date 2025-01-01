@@ -1,9 +1,11 @@
 ﻿@page "/"
 @using GHSFL.Points.Models
 @using System.Data
+@using GHSFL.Points.Modals
 
 @inject ISnackbar Snackbar
 @inject HttpClient Http
+@inject IDialogService DialogService
 
 <MudContainer MaxWidth="MaxWidth.Large">
     <MudText Typo="Typo.body1">View:</MudText>
@@ -35,7 +37,8 @@
 
         @if (_seasonInfo is not null)
         {
-            <MudTable T="FencerInfo" Items="_tableData" Breakpoint="Breakpoint.LgAndDown">
+            <MudTable T="FencerInfo" Items="_tableData" Breakpoint="Breakpoint.LgAndDown" 
+                      OnRowClick="async row => { await OpenFencerDialog(row.Item); }">
                 <HeaderContent>
                     <MudTh>
                         <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Firstname)">
@@ -159,6 +162,8 @@ else {
     private List<SchoolInfo> _womensPointsPerSchool = new();
     private List<SchoolInfo> _combinedPointsPerSchool = new();
 
+    private Dictionary<long, PoolsForFencer> _poolInfo = new();
+
     private string _schoolFilter = "All";
     private string _genderFilter = "Combined";
 
@@ -216,6 +221,9 @@ else {
             : "-";
     }
 
+    /// <summary>
+    /// Populates club dictionaries.
+    /// </summary>
     private void PopulateDictionaries()
     {
         foreach (var fencer in _seasonInfo!.FencerPoints)
@@ -238,6 +246,25 @@ else {
     }
 
     /// <summary>
+    /// Open fencer stat dialog. Currently only has pool info.
+    /// </summary>
+    /// <param name="fencerInfo">The fencer info object.</param>
+    private async Task OpenFencerDialog(FencerInfo fencerInfo)
+    {
+        // This, in theory, should never happen, but I'd rather cma than be sorry.
+        if (!_poolInfo.TryGetValue(fencerInfo.FencerId, out var pools))
+        {
+            Snackbar.Add("Could not find pool data for fencer.", Severity.Error);
+            return;
+        }
+        
+        var parameters = new DialogParameters { { "PoolInfoForFencer", pools } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
+        await DialogService.ShowAsync<FencerStats>($"Pools for {fencerInfo.Firstname} {fencerInfo.Lastname}",
+            parameters, options);
+    }
+
+    /// <summary>
     /// First code to run on page load. This populates the table with data.
     /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -247,7 +274,7 @@ else {
             try
             {
                 // Get the fencers from the fencer file.
-                _seasonInfo = await Utils.GetDataFromFile(Http);
+                _seasonInfo = await Utils.GetFencerDataFromFile(Http);
 
                 // Do some other setup. 
                 _tableData = _seasonInfo.FencerPoints
@@ -259,7 +286,8 @@ else {
                     .Select(x => x.Club)
                     .OrderBy(x => x)
                     .ToList();
-                
+
+                _poolInfo = await Utils.GetPoolDataFromFile(Http);
                 PopulateDictionaries();
             }
             catch (DataException)

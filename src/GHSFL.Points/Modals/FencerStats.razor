@@ -1,0 +1,28 @@
+@using GHSFL.Points.Models
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer>
+            <MudTable T="PoolResults" Items="PoolInfoForFencer.Pools">
+                <HeaderContent>
+                    <MudTh>Victories</MudTh>
+                    <MudTh>V/M</MudTh>
+                    <MudTh>Touches Scored</MudTh>
+                    <MudTh>Touches Received</MudTh>
+                    <MudTh>Indicator</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Victories</MudTd>
+                    <MudTd>@($"{context.Vm:N02}")</MudTd>
+                    <MudTd>@context.Scored</MudTd>
+                    <MudTd>@context.Received</MudTd>
+                    <MudTd>@context.Indicator</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudContainer>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [Parameter] public PoolsForFencer PoolInfoForFencer { get; set; }
+}
