@@ -260,8 +260,8 @@ else {
         
         var parameters = new DialogParameters { { "PoolInfoForFencer", pools } };
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
-        await DialogService.ShowAsync<FencerStats>($"Pools for {fencerInfo.Firstname} {fencerInfo.Lastname}",
-            parameters, options);
+        // await DialogService.ShowAsync<FencerStats>($"Pools for {fencerInfo.Firstname} {fencerInfo.Lastname}",
+        //     parameters, options);
     }
 
     /// <summary>
