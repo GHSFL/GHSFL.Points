@@ -9,6 +9,7 @@
 
 <MudContainer MaxWidth="MaxWidth.Large">
     <MudSwitch @bind-Value="_fencerView" Label=@(_fencerView ? "Fencers" : "Schools") Color="Color.Primary"/>
+    <MudText Typo="Typo.caption">Data updated on: @(_seasonInfo?.LastUpdated)</MudText>
 </MudContainer>
 
 @if (_fencerView)
@@ -190,6 +191,11 @@ else {
     private List<SchoolInfo> _combinedPointsPerSchool = new();
 
     /// <summary>
+    /// Elimination round (DE) data.
+    /// </summary>
+    private Dictionary<long, Dictionary<int, List<ElimResults>>> _elimInfo = new();
+
+    /// <summary>
     /// Dictionary of pool information where the key is a fencer ID and the value is information about the pools they
     /// fenced in.
     /// </summary>
@@ -213,12 +219,12 @@ else {
     /// <summary>
     /// The number of men qualified for the individual champs.
     /// </summary>
-    private int _menQualified = 0;
+    private int _menQualified;
     
     /// <summary>
     /// The number of women qualified for the individual champs.
     /// </summary>
-    private int _womenQualified = 0;
+    private int _womenQualified;
 
     /// <summary>
     /// Filter based on selected gender.
@@ -310,11 +316,21 @@ else {
             Snackbar.Add("Could not find pool data for fencer.", Severity.Error);
             return;
         }
+
+        // It's okay if this is null, if that is the case, that means the fencer has fenced in pools, but never made it
+        // to DEs. We do want to make it an empty dictionary though, we don't want to leave it null when passing to the
+        // dialog.
+        _elimInfo.TryGetValue(fencerInfo.FencerId, out var elims);
+        elims ??= new();
         
-        var parameters = new DialogParameters { { "PoolInfoForFencer", pools } };
+        var parameters = new DialogParameters { 
+            { "PoolInfoForFencer", pools },
+            { "ElimInfoForFencer", elims },
+            { "PlacesForFencer", fencerInfo.PlacesPerRound } 
+        };
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
-        // await DialogService.ShowAsync<FencerStats>($"Pools for {fencerInfo.Firstname} {fencerInfo.Lastname}",
-        //     parameters, options);
+        await DialogService.ShowAsync<FencerStats>($"Round stats for {fencerInfo.Firstname} {fencerInfo.Lastname}",
+            parameters, options);
     }
 
     /// <summary>
@@ -327,7 +343,7 @@ else {
             try
             {
                 // Get the fencers from the fencer file.
-                _seasonInfo = await Utils.GetFencerDataFromFile(Http);
+                _seasonInfo = await Utils.GetData<SeasonInfo>(Http, "sample-data/fencer-info.json");
 
                 // Do some other setup. 
                 _tableData = _seasonInfo.FencerPoints
@@ -347,7 +363,8 @@ else {
                 // Get the # of women that are qualified for the IC.
                 _womenQualified = _tableData.GetQualified("F");
                 
-                _poolInfo = await Utils.GetPoolDataFromFile(Http);
+                _poolInfo = await Utils.GetData<Dictionary<long, PoolsForFencer>>(Http, "sample-data/pools-info.json");
+                _elimInfo = await Utils.GetData<Dictionary<long, Dictionary<int, List<ElimResults>>>>(Http, "sample-data/elim-info.json");
                 PopulateDictionaries();
             }
             catch (DataException)
@@ -361,6 +378,7 @@ else {
                              $"Tournament Coordinator:\n{e.Message}", Severity.Error);
             }
 
+            Snackbar.Add("Data loaded, click on a fencer's row to see pool data.", Severity.Success);
             StateHasChanged();
         }
     }

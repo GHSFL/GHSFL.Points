@@ -4,6 +4,11 @@ namespace GHSFL.Points;
 
 public static class Extensions
 {
+    public static string GetOpponentName(this ElimResults elim, long fencerId)
+    {
+        return elim.FotlId == fencerId ? elim.FotrName : elim.FotlName;
+    }
+    
     public static void AddOrUpdate(this List<SchoolInfo> schoolInfo, string club, int points)
     {
         var entry = schoolInfo.FirstOrDefault(x => x.Club == club);

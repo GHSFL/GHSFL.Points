@@ -3,26 +3,65 @@
 <MudDialog>
     <DialogContent>
         <MudContainer>
-            <MudTable T="PoolResults" Items="PoolInfoForFencer.Pools">
-                <HeaderContent>
-                    <MudTh>Victories</MudTh>
-                    <MudTh>V/M</MudTh>
-                    <MudTh>Touches Scored</MudTh>
-                    <MudTh>Touches Received</MudTh>
-                    <MudTh>Indicator</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>@context.Victories</MudTd>
-                    <MudTd>@($"{context.Vm:N02}")</MudTd>
-                    <MudTd>@context.Scored</MudTd>
-                    <MudTd>@context.Received</MudTd>
-                    <MudTd>@context.Indicator</MudTd>
-                </RowTemplate>
-            </MudTable>
+            <MudExpansionPanels>
+                @foreach (var pool in PoolInfoForFencer.Pools)
+                {
+                    var place = PlacesForFencer[pool.RoundNumber];
+                    var text = $"Round {pool.RoundNumber} | Finished: {place}";
+                    ElimInfoForFencer.TryGetValue(pool.RoundNumber, out var elim);
+                    <MudExpansionPanel Text=@text>
+                        <MudText Typo="Typo.body1">Pool Results</MudText>
+                        <MudTable T="PoolResults" Items="new[] { pool }">
+                            <HeaderContent>
+                                <MudTh>Round</MudTh>
+                                <MudTh>Victories</MudTh>
+                                <MudTh>V/M</MudTh>
+                                <MudTh>Touches Scored</MudTh>
+                                <MudTh>Touches Received</MudTh>
+                                <MudTh>Indicator</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.RoundNumber</MudTd>
+                                <MudTd>@context.Victories</MudTd>
+                                <MudTd>@($"{context.Vm:N02}")</MudTd>
+                                <MudTd>@context.Scored</MudTd>
+                                <MudTd>@context.Received</MudTd>
+                                <MudTd>@context.Indicator</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                        <br/>
+                        @if (elim is not null && elim.Any())
+                        {
+                            <MudText Typo="Typo.body1">DEs</MudText>
+                            <MudTable T="ElimResults" Items="elim.OrderByDescending(x => x.Round)">
+                                <HeaderContent>
+                                    <MudTh>Bracket</MudTh>
+                                    <MudTh>Score</MudTh>    
+                                    <MudTh>Opponent</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>@context.Round</MudTd>
+                                    <MudTd>@context.ToString()</MudTd>
+                                    <MudTd>@context.GetOpponentName(pool.FencerId)</MudTd>
+                                </RowTemplate>
+                            </MudTable>    
+                        }
+                    </MudExpansionPanel>
+                }
+            </MudExpansionPanels>
         </MudContainer>
     </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
 </MudDialog>
 
 @code {
     [Parameter] public PoolsForFencer PoolInfoForFencer { get; set; }
+    [Parameter] public Dictionary<int, List<ElimResults>> ElimInfoForFencer { get; set; }
+    [Parameter] public Dictionary<int, string> PlacesForFencer { get; set; }
+
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
+
+    private void Close() => MudDialog.Cancel();
 }

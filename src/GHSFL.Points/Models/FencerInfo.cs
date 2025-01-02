@@ -46,4 +46,6 @@ public class FencerInfo
     /// Represents how many points this fencer has earned on each round.
     /// </summary>
     public Dictionary<int, int> PointsPerRound { get; set; } = new();
+
+    public Dictionary<int, string> PlacesPerRound { get; set; } = new();
 }

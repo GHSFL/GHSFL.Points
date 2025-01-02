@@ -2,6 +2,7 @@ namespace GHSFL.Points.Models;
 
 public class PoolResults
 {
+    public int RoundNumber { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string ClubName { get; set; }
