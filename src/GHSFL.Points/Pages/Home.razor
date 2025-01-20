@@ -10,6 +10,8 @@
 <MudContainer MaxWidth="MaxWidth.Large">
     <MudSwitch @bind-Value="_fencerView" Label=@(_fencerView ? "Fencers" : "Schools") Color="Color.Primary"/>
     <MudText Typo="Typo.caption">Data updated on: @(_seasonInfo?.LastUpdated)</MudText>
+    <br/>
+    <MudText Typo="Typo.caption">Note: Round 6 was cancelled due to a winter storm. Fencers whose names appeared on submitted rosters were counted as having attended round 6, but no points were awarded.</MudText>
 </MudContainer>
 
 @if (_fencerView)
@@ -57,7 +59,7 @@
             <MudTable T="FencerInfo" Items="_tableData" Breakpoint="Breakpoint.LgAndDown"
                       OnRowClick="async row => { await OpenFencerDialog(row.Item); }">
                 <HeaderContent>
-                    <MudTh>
+                    <MudTh> 
                         <MudTableSortLabel SortBy="new Func<FencerInfo, object>(x => x.Firstname)">
                             First
                         </MudTableSortLabel>
