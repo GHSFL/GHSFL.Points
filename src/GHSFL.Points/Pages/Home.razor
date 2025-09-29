@@ -11,7 +11,6 @@
     <MudSwitch @bind-Value="_fencerView" Label=@(_fencerView ? "Fencers" : "Schools") Color="Color.Primary"/>
     <MudText Typo="Typo.caption">Data updated on: @(_seasonInfo?.LastUpdated)</MudText>
     <br/>
-    <MudText Typo="Typo.caption">Note: Round 6 was cancelled due to a winter storm. Fencers whose names appeared on submitted rosters were counted as having attended round 6, but no points were awarded.</MudText>
 </MudContainer>
 
 @if (_fencerView)
@@ -312,6 +311,8 @@ else {
     /// <param name="fencerInfo">The fencer info object.</param>
     private async Task OpenFencerDialog(FencerInfo fencerInfo)
     {
+        // Currently having data issues with more granular data, so we don't really want to do anything here. 
+        return;
         // This, in theory, should never happen, but I'd rather cma than be sorry.
         if (!_poolInfo.TryGetValue(fencerInfo.FencerId, out var pools))
         {
