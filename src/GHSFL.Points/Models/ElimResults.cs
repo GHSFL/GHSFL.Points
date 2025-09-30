@@ -33,7 +33,7 @@ public class ElimResults
     /// <returns>A string representation of the bout score.</returns>
     public override string ToString()
     {
-        if (FotlName == "BYE" || FotrName == "BYE")
+        if (FotlName == "BYE BYE" || FotrName == "BYE BYE")
         {
             return "BYE";
         }
@@ -43,6 +43,22 @@ public class ElimResults
         
         var otherScore = FotlId == WinnerId ? FotrScore : FotlScore;
 
-        return $"{winnerName}: {winnerScore} - {otherScore}";
+        return $"Winner: {winnerName}. Score: {winnerScore} - {otherScore}";
+    }
+
+    /// <remarks>
+    /// Is the .Replace in the bottom two methods stupid? Yes.
+    /// Should I just fix it on the data side? Yes.
+    /// Is that a problem for another day? Yes.
+    /// </remarks>
+    public string GetScoreForFencer(long fencerId)
+    { 
+        return (fencerId == FotlId ? $"{FotlName} - {FotlScore}" : $"{FotrName} - {FotrScore}").Replace("BYE BYE", "BYE");
+    }
+
+    public string GetScoreForOtherFencer(long fencerId)
+    {
+        var id = fencerId == FotlId ? FotrId : FotlId;
+        return (id == FotlId ? $"{FotlScore} - {FotlName}" : $"{FotrScore} - {FotrName}").Replace("BYE BYE", "BYE");
     }
 }

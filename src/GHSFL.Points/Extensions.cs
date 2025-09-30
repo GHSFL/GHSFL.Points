@@ -6,7 +6,8 @@ public static class Extensions
 {
     public static string GetOpponentName(this ElimResults elim, long fencerId)
     {
-        return elim.FotlId == fencerId ? elim.FotrName : elim.FotlName;
+        var name = elim.FotlId == fencerId ? elim.FotrName : elim.FotlName;
+        return name == "BYE BYE" ? "BYE" : name;
     }
     
     public static void AddOrUpdate(this List<SchoolInfo> schoolInfo, string club, int points)

@@ -311,8 +311,6 @@ else {
     /// <param name="fencerInfo">The fencer info object.</param>
     private async Task OpenFencerDialog(FencerInfo fencerInfo)
     {
-        // Currently having data issues with more granular data, so we don't really want to do anything here. 
-        return;
         // This, in theory, should never happen, but I'd rather cma than be sorry.
         if (!_poolInfo.TryGetValue(fencerInfo.FencerId, out var pools))
         {
@@ -327,6 +325,7 @@ else {
         elims ??= new();
         
         var parameters = new DialogParameters { 
+            { "FencerId", fencerInfo.FencerId },
             { "PoolInfoForFencer", pools },
             { "ElimInfoForFencer", elims },
             { "PlacesForFencer", fencerInfo.PlacesPerRound } 
