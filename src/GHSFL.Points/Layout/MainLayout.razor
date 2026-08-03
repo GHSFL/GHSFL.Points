@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+
+@inject HttpClient Http
+@inject SeasonState SeasonState
 
 <MudThemeProvider IsDarkMode="true"/>
 <MudPopoverProvider/>
@@ -6,7 +9,59 @@
 <MudSnackbarProvider/>
 
 <MudLayout>
+    <MudAppBar Elevation="1">
+        <MudText Typo="Typo.h6">GHSFL.Points</MudText>
+        <MudSpacer/>
+        <MudSelect T="string" Value="_selectedSeason" ValueChanged="OnSeasonChanged" Label="Season"
+                   Dense="true" Margin="Margin.Dense" Style="max-width: 220px;">
+            <MudSelectItem Value="@SeasonState.CurrentSeason">Current Season</MudSelectItem>
+            @foreach (var season in _pastSeasons)
+            {
+                <MudSelectItem Value="@season">@season</MudSelectItem>
+            }
+        </MudSelect>
+    </MudAppBar>
     <MudMainContent>
         @Body
     </MudMainContent>
 </MudLayout>
+
+@code {
+
+    /// <summary>
+    /// The currently selected value in the season dropdown.
+    /// </summary>
+    private string _selectedSeason = SeasonState.CurrentSeason;
+
+    /// <summary>
+    /// Previous seasons available to view, as read from the seasons manifest.
+    /// </summary>
+    private List<string> _pastSeasons = new();
+
+    /// <summary>
+    /// Loads the list of past seasons available to view.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _pastSeasons = (await Utils.GetData<List<string>>(Http, "data/seasons.json"))
+                .OrderByDescending(x => x)
+                .ToList();
+        }
+        catch (System.Data.DataException)
+        {
+            _pastSeasons = new();
+        }
+    }
+
+    /// <summary>
+    /// Updates the shared season state when the user picks a different season.
+    /// </summary>
+    private void OnSeasonChanged(string season)
+    {
+        _selectedSeason = season;
+        SeasonState.SetSeason(season);
+    }
+
+}

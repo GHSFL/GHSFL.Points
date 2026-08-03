@@ -2,10 +2,12 @@
 @using GHSFL.Points.Models
 @using System.Data
 @using GHSFL.Points.Modals
+@implements IDisposable
 
 @inject ISnackbar Snackbar
 @inject HttpClient Http
 @inject IDialogService DialogService
+@inject SeasonState SeasonState
 
 <MudContainer MaxWidth="MaxWidth.Large">
     <MudSwitch @bind-Value="_fencerView" Label=@(_fencerView ? "Fencers" : "Schools") Color="Color.Primary"/>
@@ -336,53 +338,93 @@ else {
     }
 
     /// <summary>
+    /// Loads season data for whatever season is currently selected in <see cref="SeasonState"/>.
+    /// </summary>
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            // Get the fencers from the fencer file.
+            _seasonInfo = await Utils.GetData<SeasonInfo>(Http, SeasonState.GetDataPath("fencer-info.json"));
+
+            // Do some other setup.
+            _tableData = _seasonInfo.FencerPoints
+                .OrderByDescending(x => x.TotalPoints)
+                .ToList();
+
+            // Get info by school.
+            _schools = _seasonInfo.FencerPoints
+                .DistinctBy(x => x.Club)
+                .Select(x => x.Club)
+                .OrderBy(x => x)
+                .ToList();
+
+            // Reset filters since they may not apply to the newly loaded season.
+            _schoolFilter = "All";
+            _genderFilter = "Combined";
+
+            // Get the # of men that are qualified for the IC.
+            _menQualified = _tableData.GetQualified("M");
+
+            // Get the # of women that are qualified for the IC.
+            _womenQualified = _tableData.GetQualified("F");
+
+            _poolInfo = await Utils.GetData<Dictionary<long, PoolsForFencer>>(Http, SeasonState.GetDataPath("pools-info.json"));
+            _elimInfo = await Utils.GetData<Dictionary<long, Dictionary<int, List<ElimResults>>>>(Http, SeasonState.GetDataPath("elim-info.json"));
+
+            _mensPointsPerSchool = new();
+            _womensPointsPerSchool = new();
+            _combinedPointsPerSchool = new();
+            PopulateDictionaries();
+        }
+        catch (DataException)
+        {
+            Snackbar.Add("An error occured while fetching data. Please refresh the page. If the error " +
+                         "persists, contact the GHSFL Tournament Coordinator.", Severity.Error);
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add($"An unexpected error occured. Please send the below message to the GHSFL " +
+                         $"Tournament Coordinator:\n{e.Message}", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Reloads data whenever the selected season changes.
+    /// </summary>
+    private async void OnSeasonChanged()
+    {
+        await LoadDataAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
     /// First code to run on page load. This populates the table with data.
     /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try
-            {
-                // Get the fencers from the fencer file.
-                _seasonInfo = await Utils.GetData<SeasonInfo>(Http, "sample-data/fencer-info.json");
-
-                // Do some other setup. 
-                _tableData = _seasonInfo.FencerPoints
-                    .OrderByDescending(x => x.TotalPoints)
-                    .ToList();
-
-                // Get info by school.
-                _schools = _seasonInfo.FencerPoints
-                    .DistinctBy(x => x.Club)
-                    .Select(x => x.Club)
-                    .OrderBy(x => x)
-                    .ToList();
-
-                // Get the # of men that are qualified for the IC.
-                _menQualified = _tableData.GetQualified("M");
-                
-                // Get the # of women that are qualified for the IC.
-                _womenQualified = _tableData.GetQualified("F");
-                
-                _poolInfo = await Utils.GetData<Dictionary<long, PoolsForFencer>>(Http, "sample-data/pools-info.json");
-                _elimInfo = await Utils.GetData<Dictionary<long, Dictionary<int, List<ElimResults>>>>(Http, "sample-data/elim-info.json");
-                PopulateDictionaries();
-            }
-            catch (DataException)
-            {
-                Snackbar.Add("An error occured while fetching data. Please refresh the page. If the error " +
-                             "persists, contact the GHSFL Tournament Coordinator.", Severity.Error);
-            }
-            catch (Exception e)
-            {
-                Snackbar.Add($"An unexpected error occured. Please send the below message to the GHSFL " +
-                             $"Tournament Coordinator:\n{e.Message}", Severity.Error);
-            }
-
+            await LoadDataAsync();
             Snackbar.Add("Data loaded, click on a fencer's row to see pool data.", Severity.Success);
             StateHasChanged();
         }
+    }
+
+    /// <summary>
+    /// Subscribes to season change notifications.
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        SeasonState.OnChange += OnSeasonChanged;
+    }
+
+    /// <summary>
+    /// Unsubscribes from season change notifications.
+    /// </summary>
+    public void Dispose()
+    {
+        SeasonState.OnChange -= OnSeasonChanged;
     }
 
 }
