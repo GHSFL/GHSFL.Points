@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "GHSFL.Points",
   "resources": {
-    "hash": "sha256-d9b8iGxGrXAB/t7KbJiZsVrGM3qPuzcJGy5x7H9suTE=",
+    "hash": "sha256-/fHgmDKfEl8wxXHhXOl0qvmoA1F2p/PlsBxLGrilmIo=",
     "jsModuleNative": {
       "dotnet.native.8.0.33.oj1f7qxi39.js": "sha256-1DK+nm58uZjvv7U2c/UlUp1zFjeBZnqXHFHBX/W1igo="
     },
@@ -17,7 +17,7 @@
       "icudt_no_CJK.dat": "sha256-L7sV7NEYP37/Qr2FPCePo5cJqRgTXRwGHuwF5Q+0Nfs="
     },
     "assembly": {
-      "GHSFL.Points.wasm": "sha256-GMQPmKj5WwKx9Fh3J88bJy5M+UabaMwq8uYY5st9hy4=",
+      "GHSFL.Points.wasm": "sha256-gtsu/V50cqYKreg4qmZQ8741G1HENToXIuX3a2SCjb0=",
       "Microsoft.AspNetCore.Components.Forms.wasm": "sha256-un0mWHcNYsRjdRZz/RwoEXZ36QV3diPGsr1753foDzQ=",
       "Microsoft.AspNetCore.Components.wasm": "sha256-GzRmYY9mSGl5lS4XB7eKTk3UsIBQa4ep/DDEB0ti6N0=",
       "Microsoft.AspNetCore.Components.Web.wasm": "sha256-ecbafn+C9fpuPCCFfbIp2RHZOGzJwSpj15EtkS7Plws=",
